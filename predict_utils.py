@@ -1,3 +1,4 @@
+import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
@@ -9,7 +10,7 @@ mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(max_num_hands=2)
 prev_letter = ""
 stable_count = 0
-stable_threshold = 15  # Tune for more/less sensitivity
+stable_threshold = 15
 
 def predict_from_frame(image, current_word):
     global prev_letter, stable_count

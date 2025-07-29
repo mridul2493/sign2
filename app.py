@@ -1,35 +1,35 @@
-import gradio as gr
-import numpy as np
+import logging
+logging.basicConfig(level=logging.INFO)
+
+from flask import Flask, render_template, request, jsonify
 import cv2
-import pickle
+import numpy as np
+import base64
+from predict_utils import predict_from_frame
 
-# Load your model
-with open("sign_model.pkl", "rb") as f:
-    model = pickle.load(f)
+app = Flask(__name__)
+current_word = ""
 
-# Define labels for output (update this according to your model)
-labels = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+@app.route('/')
+def index():
+    return render_template('index.html')
 
-# Prediction function
-def predict_sign_from_image(image):
-    if image is None:
-        return "No image"
-    
-    # Preprocess image: resize, grayscale, flatten — adjust based on training
-    img_resized = cv2.resize(image, (64, 64))
-    gray = cv2.cvtColor(img_resized, cv2.COLOR_BGR2GRAY)
-    flat = gray.flatten().reshape(1, -1)
+@app.route('/predict', methods=['POST'])
+def predict():
+    global current_word
+    data = request.json.get('image')
+    img_data = base64.b64decode(data.split(',')[1])
+    np_img = np.frombuffer(img_data, dtype=np.uint8)
+    frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
-    prediction = model.predict(flat)[0]
-    return f"Predicted Sign: {labels[prediction]}"
+    letter, current_word = predict_from_frame(frame, current_word)
+    return jsonify({'letter': letter, 'word': current_word})
 
-# Gradio interface
-demo = gr.Interface(
-    fn=predict_sign_from_image,
-    inputs=gr.Image(source="webcam", streaming=True, label="Show Your Sign"),
-    outputs=gr.Text(label="Detected Letter"),
-    live=True,
-    title="Real-Time Sign Language Detector"
-)
+@app.route('/reset', methods=['POST'])
+def reset():
+    global current_word
+    current_word = ""
+    return jsonify({'status': 'reset'})
 
-demo.launch()
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)

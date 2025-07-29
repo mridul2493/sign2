@@ -1,4 +1,6 @@
-gradio
-opencv-python
-numpy
-scikit-learn
+flask==3.0.3
+mediapipe==0.10.21
+opencv-python==4.7.0.72
+numpy==1.23.5
+scikit-learn==1.3.0
+gunicorn==20.1.0
